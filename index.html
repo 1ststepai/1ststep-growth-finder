@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1stStep.ai Outreach Finder</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --ink: #0f172a;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #dbe3ef;
+      --soft: #f8fafc;
+      --panel: #ffffff;
+      --blue: #2563eb;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --shadow: 0 18px 55px rgba(15, 23, 42, 0.11);
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--soft);
+      line-height: 1.5;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(255, 255, 255, 0.94);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+
+    .bar, main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .bar {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      font-weight: 900;
+      font-size: 20px;
+      color: var(--blue);
+    }
+
+    .brand span { color: var(--ink); }
+
+    main {
+      padding: 28px 0 56px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(30px, 4vw, 52px); line-height: 1.02; margin-bottom: 12px; letter-spacing: 0; }
+    h2 { font-size: 22px; margin-bottom: 14px; }
+    h3 { font-size: 15px; margin-bottom: 8px; }
+    p { color: var(--text); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 20px;
+      align-items: center;
+      padding: 30px;
+      background: linear-gradient(135deg, #ffffff 0%, #eef6ff 100%);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .hero p { font-size: 17px; max-width: 680px; }
+
+    .notice {
+      border-left: 4px solid var(--amber);
+      background: #fffbeb;
+      color: #78350f;
+      padding: 13px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 900;
+      color: var(--muted);
+      margin: 14px 0 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button, .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+    }
+
+    .primary { background: var(--blue); color: #fff; }
+    .secondary { background: #e2e8f0; color: var(--ink); }
+    .green { background: var(--green); color: #fff; }
+    .danger { background: #fee2e2; color: #991b1b; }
+
+    .search-list, .prospect-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .search-card, .prospect-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .search-card p, .prospect-card p {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .template {
+      white-space: pre-wrap;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 14px;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    @media (max-width: 860px) {
+      .grid, .hero { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .bar { align-items: flex-start; flex-direction: column; padding: 14px 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="brand">1stStep<span>.ai</span> Outreach Finder</div>
+      <div class="meta">Manual, free, no scraping, local-only tracker</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <h1>Find job seekers to help without scraping platforms.</h1>
+        <p>Generate targeted search links for LinkedIn, Reddit, and X, then save qualified prospects locally and export your outreach list.</p>
+      </div>
+      <div class="notice">Use this for thoughtful manual outreach. Keep daily volume low, personalize every message, and do not automate LinkedIn scraping or mass DMs.</div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Search Builder</h2>
+        <div class="row">
+          <div>
+            <label for="role">Role / Field</label>
+            <input id="role" value="marketing manager" placeholder="marketing manager, software engineer, product manager">
+          </div>
+          <div>
+            <label for="location">Location</label>
+            <input id="location" value="United States" placeholder="United States, New York, Remote">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="platform">Platform</label>
+            <select id="platform">
+              <option value="linkedin">LinkedIn public posts</option>
+              <option value="reddit">Reddit threads</option>
+              <option value="google">Google public search</option>
+              <option value="x">X / Twitter</option>
+            </select>
+          </div>
+          <div>
+            <label for="days">Freshness</label>
+            <select id="days">
+              <option value="7">Last week intent</option>
+              <option value="30">Last month intent</option>
+              <option value="any">Any recent-looking post</option>
+            </select>
+          </div>
+        </div>
+        <label for="keywords">Extra Keywords</label>
+        <input id="keywords" value="#OpenToWork hiring laid off job search" placeholder="#OpenToWork, laid off, job search">
+        <div class="btns">
+          <button class="primary" id="buildBtn">Build Search Links</button>
+          <button class="secondary" id="copyDmBtn">Copy Subject + DM</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Search Links</h2>
+        <div id="searchList" class="search-list"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Save Prospect</h2>
+        <label for="resultPaste">Paste One Google / LinkedIn Result</label>
+        <textarea id="resultPaste" placeholder="LinkedIn - Hiral Shah
+Hiral Shah's Post
+United States ... #OpenToWork #CyberSecurity ...
+https://www.linkedin.com/posts/..."></textarea>
+        <div class="btns">
+          <button class="primary" id="parseBtn">Create Prospect + Template</button>
+        </div>
+        <label for="name">Name</label>
+        <input id="name" placeholder="Jane Smith">
+        <label for="profile">Profile URL</label>
+        <input id="profile" placeholder="https://www.linkedin.com/in/...">
+        <label for="field">Field</label>
+        <input id="field" placeholder="Marketing, Tech, Product, Sales">
+        <label for="note">Personalization Note</label>
+        <textarea id="note" placeholder="Saw your post about looking for lifecycle marketing roles."></textarea>
+        <div class="btns">
+          <button class="green" id="saveBtn">Save Prospect</button>
+          <button class="secondary" id="exportBtn">Export CSV</button>
+          <button class="danger" id="clearBtn">Clear List</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Outreach Template</h2>
+        <div id="template" class="template"></div>
+        <div class="btns">
+          <button class="secondary" id="copyTemplateBtn">Copy Subject + DM</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Prospects</h2>
+      <div id="prospects" class="prospect-list"></div>
+    </section>
+  </main>
+
+  <script>
+    const STORE_KEY = 'firststep_outreach_prospects';
+    const $ = id => document.getElementById(id);
+
+    function encode(q) {
+      return encodeURIComponent(q.replace(/\s+/g, ' ').trim());
+    }
+
+    function googleFreshnessParam(days) {
+      if (days === '7') return '&tbs=qdr:w';
+      if (days === '30') return '&tbs=qdr:m';
+      return '';
+    }
+
+    function getSubject() {
+      return 'Free resume tailoring help';
+    }
+
+    function getMessage(name = '[Name]') {
+      return `Hey ${name}, saw your #OpenToWork post. I'm building 1stStep.ai to help tailor resumes faster. Free month if useful: https://resume.1ststep.ai`;
+    }
+
+    function getTemplate(name = '[Name]') {
+      return `Subject: ${getSubject()}\n\n${getMessage(name)}`;
+    }
+
+    function prospectTemplate(item) {
+      const firstName = String(item.name || '[Name]').trim().split(/\s+/)[0] || '[Name]';
+      return getTemplate(firstName);
+    }
+
+    function buildQueries() {
+      const role = $('role').value.trim() || 'marketing manager';
+      const location = $('location').value.trim();
+      const keywords = $('keywords').value.trim() || '#OpenToWork';
+      const days = $('days').value;
+      const platform = $('platform').value;
+      const freshness = googleFreshnessParam(days);
+      const core = `"open to work" OR "#OpenToWork" ${role} ${location} ${keywords}`;
+      const searches = [];
+
+      if (platform === 'linkedin' || platform === 'google') {
+        searches.push({
+          title: 'Google: LinkedIn posts and profiles',
+          hint: 'Best free starting point. Open results manually and qualify fit before messaging.',
+          url: `https://www.google.com/search?q=${encode(`site:linkedin.com/in OR site:linkedin.com/posts ${core}`)}${freshness}`
+        });
+        searches.push({
+          title: 'Google: LinkedIn exact phrase',
+          hint: 'Narrower search for explicit #OpenToWork language.',
+          url: `https://www.google.com/search?q=${encode(`site:linkedin.com/posts "#OpenToWork" "${role}" "${location}"`)}${freshness}`
+        });
+      }
+
+      if (platform === 'x' || platform === 'google') {
+        searches.push({
+          title: 'Google: X / Twitter public posts',
+          hint: 'Useful for people who announce layoffs or job searches publicly.',
+          url: `https://www.google.com/search?q=${encode(`site:x.com OR site:twitter.com ${core}`)}${freshness}`
+        });
+      }
+
+      if (platform === 'reddit' || platform === 'google') {
+        searches.push({
+          title: 'Google: Reddit job-search threads',
+          hint: 'Find public Reddit discussions where a helpful, no-link-first reply can work.',
+          url: `https://www.google.com/search?q=${encode(`site:reddit.com/r/careerguidance OR site:reddit.com/r/resumes OR site:reddit.com/r/jobs ${role} ${location} "resume" OR "not getting interviews" OR "laid off"`)}${freshness}`
+        });
+      }
+
+      searches.push({
+        title: 'LinkedIn manual search',
+        hint: 'Paste the generated query into LinkedIn search manually. Do not automate scraping.',
+        url: `https://www.linkedin.com/search/results/content/?keywords=${encode(`#OpenToWork ${role} ${location}`)}`
+      });
+
+      return searches;
+    }
+
+    function renderSearches() {
+      const list = $('searchList');
+      list.innerHTML = '';
+      buildQueries().forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'search-card';
+        card.innerHTML = `
+          <h3>${item.title}</h3>
+          <p>${item.hint}</p>
+          <a class="btn primary" href="${item.url}" target="_blank" rel="noopener">Open Search</a>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function loadProspects() {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch { return []; }
+    }
+
+    function saveProspects(items) {
+      localStorage.setItem(STORE_KEY, JSON.stringify(items));
+    }
+
+    function renderProspects() {
+      const items = loadProspects();
+      const box = $('prospects');
+      if (!items.length) {
+        box.innerHTML = '<div class="empty">No prospects saved yet.</div>';
+        return;
+      }
+      box.innerHTML = '';
+      items.forEach((item, index) => {
+        const card = document.createElement('article');
+        card.className = 'prospect-card';
+        card.innerHTML = `
+          <h3>${escapeHtml(item.name || 'Unnamed prospect')}</h3>
+          <p>${escapeHtml(item.note || '')}</p>
+          <div class="meta">${escapeHtml(item.field || '')}</div>
+          <div class="template">${escapeHtml(item.template || prospectTemplate(item))}</div>
+          <div class="btns">
+            <a class="btn secondary" href="${escapeAttr(item.profile || '#')}" target="_blank" rel="noopener">Open Profile</a>
+            <button class="secondary" data-copy="${index}">Copy Subject + DM</button>
+            <button class="green" data-sent="${index}">Mark DM Sent</button>
+            <button class="danger" data-remove="${index}">Remove</button>
+          </div>
+        `;
+        box.appendChild(card);
+      });
+      box.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = loadProspects()[Number(btn.dataset.copy)];
+          copyText(item.template || prospectTemplate(item));
+        });
+      });
+      box.querySelectorAll('[data-sent]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const next = loadProspects();
+          next[Number(btn.dataset.sent)].status = 'DM_SENT';
+          saveProspects(next);
+          renderProspects();
+        });
+      });
+      box.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const next = loadProspects();
+          next.splice(Number(btn.dataset.remove), 1);
+          saveProspects(next);
+          renderProspects();
+        });
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, '&#96;');
+    }
+
+    function parseResult(raw) {
+      const text = String(raw || '').trim();
+      const compact = text.replace(/\s+/g, ' ');
+      const urlMatch = text.match(/https?:\/\/[^\s]+linkedin\.com[^\s]*/i);
+      let name = '';
+      const linkedinName = text.match(/LinkedIn\s*-\s*([^\n|]+?)(?:\s+\d+\s+reactions|\n|$)/i);
+      const postName = text.match(/([A-Z][A-Za-z .'-]{2,80})'s Post/);
+      if (linkedinName) name = linkedinName[1].trim();
+      if (!name && postName) name = postName[1].trim();
+      return {
+        name,
+        profile: urlMatch ? urlMatch[0] : '',
+        field: $('role').value.trim(),
+        note: compact.slice(0, 240),
+      };
+    }
+
+    function buildProspectItem(source) {
+      const item = {
+        name: source.name || '',
+        profile: source.profile || '',
+        field: source.field || '',
+        note: source.note || '',
+        subject: getSubject(),
+        template: '',
+        status: 'NEW',
+        savedAt: new Date().toISOString()
+      };
+      item.template = prospectTemplate(item);
+      return item;
+    }
+
+    function saveItem(item) {
+      if (!item.name && !item.profile) return false;
+      const items = loadProspects();
+      items.unshift(item);
+      saveProspects(items);
+      renderProspects();
+      return true;
+    }
+
+    function parseAndSaveProspect() {
+      const item = buildProspectItem(parseResult($('resultPaste').value));
+      if (!saveItem(item)) return;
+      $('name').value = item.name;
+      $('profile').value = item.profile;
+      $('field').value = item.field;
+      $('note').value = item.note;
+      $('template').textContent = item.template;
+    }
+
+    function saveProspect() {
+      const item = buildProspectItem({
+        name: $('name').value.trim(),
+        profile: $('profile').value.trim(),
+        field: $('field').value.trim(),
+        note: $('note').value.trim()
+      });
+      if (!saveItem(item)) return;
+      ['name', 'profile', 'field', 'note'].forEach(id => $(id).value = '');
+    }
+
+    function exportCsv() {
+      const rows = [['Name', 'Profile URL', 'Field', 'Note', 'Subject', 'Template', 'Status', 'Saved At'], ...loadProspects().map(item => [
+        item.name, item.profile, item.field, item.note, item.subject || getSubject(), item.template || prospectTemplate(item), item.status || 'NEW', item.savedAt
+      ])];
+      const csv = rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `firststep-outreach-prospects-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); } catch {}
+    }
+
+    $('buildBtn').addEventListener('click', renderSearches);
+    $('copyDmBtn').addEventListener('click', () => copyText(getTemplate()));
+    $('copyTemplateBtn').addEventListener('click', () => copyText(getTemplate()));
+    $('parseBtn').addEventListener('click', parseAndSaveProspect);
+    $('saveBtn').addEventListener('click', saveProspect);
+    $('exportBtn').addEventListener('click', exportCsv);
+    $('clearBtn').addEventListener('click', () => {
+      if (confirm('Clear all saved prospects?')) {
+        saveProspects([]);
+        renderProspects();
+      }
+    });
+
+    $('template').textContent = getTemplate();
+    renderSearches();
+    renderProspects();
+  </script>
+</body>
+</html>
