@@ -199,6 +199,23 @@
       font-size: 14px;
     }
 
+    .status {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: #e0f2fe;
+      color: #075985;
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .status.sent {
+      background: #dcfce7;
+      color: #166534;
+    }
+
     .empty {
       border: 1px dashed var(--line);
       border-radius: 8px;
@@ -281,13 +298,15 @@
     <section class="grid">
       <div class="panel">
         <h2>Save Prospect</h2>
-        <label for="resultPaste">Paste One Google / LinkedIn Result</label>
-        <textarea id="resultPaste" placeholder="LinkedIn - Hiral Shah
+        <label for="resultPaste">Paste Search Results</label>
+        <textarea id="resultPaste" placeholder="Paste one or many results. Separate multiple prospects with a blank line.
+
+LinkedIn - Hiral Shah
 Hiral Shah's Post
 United States ... #OpenToWork #CyberSecurity ...
 https://www.linkedin.com/posts/..."></textarea>
         <div class="btns">
-          <button class="primary" id="parseBtn">Create Prospect + Template</button>
+          <button class="primary" id="parseBtn">Create DM Queue</button>
         </div>
         <label for="name">Name</label>
         <input id="name" placeholder="Jane Smith">
@@ -314,7 +333,12 @@ https://www.linkedin.com/posts/..."></textarea>
     </section>
 
     <section class="panel">
-      <h2>Prospects</h2>
+      <h2>DM Queue</h2>
+      <div id="dmConsole" class="prospect-list"></div>
+      <div class="btns">
+        <button class="secondary" id="copyAllBtn">Copy All Unsent Messages</button>
+      </div>
+      <h2 style="margin-top: 24px;">Prospects</h2>
       <div id="prospects" class="prospect-list"></div>
     </section>
   </main>
@@ -337,17 +361,18 @@ https://www.linkedin.com/posts/..."></textarea>
       return 'Free resume tailoring help';
     }
 
-    function getMessage(name = '[Name]') {
-      return `Hey ${name}, saw your #OpenToWork post. I'm building 1stStep.ai to help tailor resumes faster. Free month if useful: https://resume.1ststep.ai`;
+    function getMessage(name = '[Name]', item = {}) {
+      const signal = item.platform === 'Reddit' ? 'your post about the job search' : 'your #OpenToWork post';
+      return `Hey ${name}, saw ${signal}. I'm building 1stStep.ai to help tailor resumes faster. Free month if useful: https://resume.1ststep.ai`;
     }
 
-    function getTemplate(name = '[Name]') {
-      return `Subject: ${getSubject()}\n\n${getMessage(name)}`;
+    function getTemplate(name = '[Name]', item = {}) {
+      return `Subject: ${getSubject()}\n\n${getMessage(name, item)}`;
     }
 
     function prospectTemplate(item) {
       const firstName = String(item.name || '[Name]').trim().split(/\s+/)[0] || '[Name]';
-      return getTemplate(firstName);
+      return getTemplate(firstName, item);
     }
 
     function buildQueries() {
@@ -424,6 +449,7 @@ https://www.linkedin.com/posts/..."></textarea>
     function renderProspects() {
       const items = loadProspects();
       const box = $('prospects');
+      renderDmConsole(items);
       if (!items.length) {
         box.innerHTML = '<div class="empty">No prospects saved yet.</div>';
         return;
@@ -432,19 +458,29 @@ https://www.linkedin.com/posts/..."></textarea>
       items.forEach((item, index) => {
         const card = document.createElement('article');
         card.className = 'prospect-card';
+        const status = item.status || 'NEW';
         card.innerHTML = `
           <h3>${escapeHtml(item.name || 'Unnamed prospect')}</h3>
+          <div class="status ${status === 'DM_SENT' ? 'sent' : ''}">${escapeHtml(status)}</div>
           <p>${escapeHtml(item.note || '')}</p>
-          <div class="meta">${escapeHtml(item.field || '')}</div>
+          <div class="meta">${escapeHtml(item.platform || 'Prospect')} · ${escapeHtml(item.field || '')}</div>
           <div class="template">${escapeHtml(item.template || prospectTemplate(item))}</div>
           <div class="btns">
             <a class="btn secondary" href="${escapeAttr(item.profile || '#')}" target="_blank" rel="noopener">Open Profile</a>
+            <button class="primary" data-open-copy="${index}">Open + Copy</button>
             <button class="secondary" data-copy="${index}">Copy Subject + DM</button>
             <button class="green" data-sent="${index}">Mark DM Sent</button>
             <button class="danger" data-remove="${index}">Remove</button>
           </div>
         `;
         box.appendChild(card);
+      });
+      box.querySelectorAll('[data-open-copy]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = loadProspects()[Number(btn.dataset.openCopy)];
+          copyText(item.template || prospectTemplate(item));
+          if (item.profile) window.open(item.profile, '_blank', 'noopener');
+        });
       });
       box.querySelectorAll('[data-copy]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -470,6 +506,37 @@ https://www.linkedin.com/posts/..."></textarea>
       });
     }
 
+    function renderDmConsole(items) {
+      const box = $('dmConsole');
+      const nextIndex = items.findIndex(item => (item.status || 'NEW') !== 'DM_SENT');
+      if (nextIndex < 0) {
+        box.innerHTML = '<div class="empty">No unsent messages. Nice.</div>';
+        return;
+      }
+      const item = items[nextIndex];
+      box.innerHTML = `
+        <article class="prospect-card">
+          <h3>Next: ${escapeHtml(item.name || 'Unnamed prospect')}</h3>
+          <div class="meta">${escapeHtml(item.platform || 'Prospect')} · ${escapeHtml(item.field || '')}</div>
+          <div class="template">${escapeHtml(item.template || prospectTemplate(item))}</div>
+          <div class="btns">
+            <button class="primary" id="nextOpenCopy">Open Profile + Copy Message</button>
+            <button class="green" id="nextSent">Mark DM Sent</button>
+          </div>
+        </article>
+      `;
+      $('nextOpenCopy').addEventListener('click', () => {
+        copyText(item.template || prospectTemplate(item));
+        if (item.profile) window.open(item.profile, '_blank', 'noopener');
+      });
+      $('nextSent').addEventListener('click', () => {
+        const next = loadProspects();
+        next[nextIndex].status = 'DM_SENT';
+        saveProspects(next);
+        renderProspects();
+      });
+    }
+
     function escapeHtml(value) {
       return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
@@ -481,18 +548,36 @@ https://www.linkedin.com/posts/..."></textarea>
     function parseResult(raw) {
       const text = String(raw || '').trim();
       const compact = text.replace(/\s+/g, ' ');
-      const urlMatch = text.match(/https?:\/\/[^\s]+linkedin\.com[^\s]*/i);
+      const urlMatch = text.match(/https?:\/\/[^\s]+(?:linkedin\.com|x\.com|twitter\.com|reddit\.com)[^\s]*/i);
       let name = '';
       const linkedinName = text.match(/LinkedIn\s*-\s*([^\n|]+?)(?:\s+\d+\s+reactions|\n|$)/i);
       const postName = text.match(/([A-Z][A-Za-z .'-]{2,80})'s Post/);
+      const xName = text.match(/(?:X|Twitter)\s*-\s*@?([A-Za-z0-9_]{2,30})/i);
+      const redditName = text.match(/(?:reddit\.com\/user\/|u\/)([A-Za-z0-9_-]{2,30})/i);
       if (linkedinName) name = linkedinName[1].trim();
       if (!name && postName) name = postName[1].trim();
+      if (!name && xName) name = `@${xName[1].trim().replace(/^@/, '')}`;
+      if (!name && redditName) name = redditName[1].trim();
+      const url = urlMatch ? urlMatch[0] : '';
+      const platform = /reddit\.com/i.test(url || text) ? 'Reddit' : (/x\.com|twitter\.com/i.test(url || text) ? 'X' : 'LinkedIn');
       return {
         name,
-        profile: urlMatch ? urlMatch[0] : '',
+        profile: url,
+        platform,
         field: $('role').value.trim(),
         note: compact.slice(0, 240),
       };
+    }
+
+    function splitPastedResults(raw) {
+      const text = String(raw || '').trim();
+      if (!text) return [];
+      const blocks = text.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+      if (blocks.length > 1) return blocks;
+      return text
+        .split(/(?=\n(?:LinkedIn|X|Twitter|Reddit)\s*-)|(?=\nhttps?:\/\/(?:www\.)?(?:linkedin|x|twitter|reddit)\.com)/i)
+        .map(s => s.trim())
+        .filter(Boolean);
     }
 
     function buildProspectItem(source) {
@@ -520,13 +605,18 @@ https://www.linkedin.com/posts/..."></textarea>
     }
 
     function parseAndSaveProspect() {
-      const item = buildProspectItem(parseResult($('resultPaste').value));
-      if (!saveItem(item)) return;
-      $('name').value = item.name;
-      $('profile').value = item.profile;
-      $('field').value = item.field;
-      $('note').value = item.note;
-      $('template').textContent = item.template;
+      const parsed = splitPastedResults($('resultPaste').value).map(block => buildProspectItem(parseResult(block)));
+      const valid = parsed.filter(item => item.name || item.profile);
+      if (!valid.length) return;
+      const items = loadProspects();
+      const first = valid[0];
+      saveProspects([...valid.reverse(), ...items]);
+      $('name').value = first.name;
+      $('profile').value = first.profile;
+      $('field').value = first.field;
+      $('note').value = first.note;
+      $('template').textContent = first.template;
+      renderProspects();
     }
 
     function saveProspect() {
@@ -563,6 +653,12 @@ https://www.linkedin.com/posts/..."></textarea>
     $('copyTemplateBtn').addEventListener('click', () => copyText(getTemplate()));
     $('parseBtn').addEventListener('click', parseAndSaveProspect);
     $('saveBtn').addEventListener('click', saveProspect);
+    $('copyAllBtn').addEventListener('click', () => {
+      const messages = loadProspects()
+        .filter(item => (item.status || 'NEW') !== 'DM_SENT')
+        .map(item => item.template || prospectTemplate(item));
+      copyText(messages.join('\n\n---\n\n'));
+    });
     $('exportBtn').addEventListener('click', exportCsv);
     $('clearBtn').addEventListener('click', () => {
       if (confirm('Clear all saved prospects?')) {
