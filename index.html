@@ -184,6 +184,36 @@
       color: var(--text);
     }
 
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 13px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      margin-top: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
     .meta {
       font-size: 12px;
       color: var(--muted);
@@ -227,6 +257,7 @@
 
     @media (max-width: 860px) {
       .grid, .hero { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
       .row { grid-template-columns: 1fr; }
       .bar { align-items: flex-start; flex-direction: column; padding: 14px 0; }
     }
@@ -243,10 +274,53 @@
   <main>
     <section class="hero">
       <div>
-        <h1>Find job seekers to help without scraping platforms.</h1>
-        <p>Generate targeted search links for LinkedIn, Reddit, and X, then save qualified prospects locally and export your outreach list.</p>
+        <h1>Run manual growth like a partner program.</h1>
+        <p>Find job seekers, prep outreach, track DMs sent, and credit signups to a referral code without scraping or auto-DMing.</p>
       </div>
-      <div class="notice">Use this for thoughtful manual outreach. Keep daily volume low, personalize every message, and do not automate LinkedIn scraping or mass DMs.</div>
+      <div class="notice">For growth partners: keep outreach human, export proof, and use your referral link so finder fees can be credited cleanly.</div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Partner Setup</h2>
+        <div class="row">
+          <div>
+            <label for="partnerName">Partner Name</label>
+            <input id="partnerName" placeholder="Your name or team name">
+          </div>
+          <div>
+            <label for="referralCode">Referral Code</label>
+            <input id="referralCode" placeholder="alex-growth-01">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="finderFee">Finder Fee Per Signup</label>
+            <input id="finderFee" type="number" min="0" value="10">
+          </div>
+          <div>
+            <label for="dailyGoal">Daily DM Goal</label>
+            <input id="dailyGoal" type="number" min="1" value="25">
+          </div>
+        </div>
+        <label for="referralLink">Referral Link</label>
+        <input id="referralLink" readonly>
+        <div class="btns">
+          <button class="primary" id="savePartnerBtn">Save Partner Setup</button>
+          <button class="secondary" id="copyReferralBtn">Copy Referral Link</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Scoreboard</h2>
+        <div class="stats">
+          <div class="stat"><strong id="statProspects">0</strong><span>Prospects</span></div>
+          <div class="stat"><strong id="statSent">0</strong><span>DMs Sent</span></div>
+          <div class="stat"><strong id="statSignups">0</strong><span>Signups</span></div>
+          <div class="stat"><strong id="statFees">$0</strong><span>Est. Fees</span></div>
+        </div>
+        <p id="missionText" style="margin-top: 14px; margin-bottom: 0;">Daily mission: send thoughtful DMs and mark signups when someone converts.</p>
+      </div>
     </section>
 
     <section class="grid">
@@ -345,6 +419,7 @@ https://www.linkedin.com/posts/..."></textarea>
 
   <script>
     const STORE_KEY = 'firststep_outreach_prospects';
+    const PARTNER_KEY = 'firststep_growth_partner';
     const $ = id => document.getElementById(id);
 
     function encode(q) {
@@ -357,13 +432,54 @@ https://www.linkedin.com/posts/..."></textarea>
       return '';
     }
 
+    function slugify(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48);
+    }
+
+    function loadPartner() {
+      try { return JSON.parse(localStorage.getItem(PARTNER_KEY) || '{}'); } catch { return {}; }
+    }
+
+    function savePartner(partner) {
+      localStorage.setItem(PARTNER_KEY, JSON.stringify(partner));
+    }
+
+    function getPartner() {
+      const current = loadPartner();
+      const partnerName = $('partnerName')?.value.trim() || current.partnerName || '';
+      const referralCode = slugify($('referralCode')?.value || current.referralCode || partnerName || 'growth-partner');
+      const finderFee = Number($('finderFee')?.value || current.finderFee || 10);
+      const dailyGoal = Number($('dailyGoal')?.value || current.dailyGoal || 25);
+      return { partnerName, referralCode, finderFee, dailyGoal };
+    }
+
+    function referralLink(partner = getPartner()) {
+      const code = partner.referralCode || 'growth-partner';
+      return `https://resume.1ststep.ai/?ref=${encodeURIComponent(code)}&utm_source=partner&utm_medium=manual_dm&utm_campaign=growth_partner`;
+    }
+
+    function hydratePartnerForm() {
+      const partner = loadPartner();
+      $('partnerName').value = partner.partnerName || '';
+      $('referralCode').value = partner.referralCode || '';
+      $('finderFee').value = partner.finderFee || 10;
+      $('dailyGoal').value = partner.dailyGoal || 25;
+      $('referralLink').value = referralLink(getPartner());
+    }
+
     function getSubject() {
       return 'Free resume tailoring help';
     }
 
     function getMessage(name = '[Name]', item = {}) {
       const signal = item.platform === 'Reddit' ? 'your post about the job search' : 'your #OpenToWork post';
-      return `Hey ${name}, saw ${signal}. I'm building 1stStep.ai to help tailor resumes faster. Free month if useful: https://resume.1ststep.ai`;
+      const link = item.referralLink || referralLink();
+      return `Hey ${name}, saw ${signal}. I'm building 1stStep.ai to help tailor resumes faster. Free month if useful: ${link}`;
     }
 
     function getTemplate(name = '[Name]', item = {}) {
@@ -444,6 +560,7 @@ https://www.linkedin.com/posts/..."></textarea>
 
     function saveProspects(items) {
       localStorage.setItem(STORE_KEY, JSON.stringify(items));
+      renderStats();
     }
 
     function renderProspects() {
@@ -461,7 +578,7 @@ https://www.linkedin.com/posts/..."></textarea>
         const status = item.status || 'NEW';
         card.innerHTML = `
           <h3>${escapeHtml(item.name || 'Unnamed prospect')}</h3>
-          <div class="status ${status === 'DM_SENT' ? 'sent' : ''}">${escapeHtml(status)}</div>
+          <div class="status ${['DM_SENT', 'SIGNED_UP'].includes(status) ? 'sent' : ''}">${escapeHtml(status)}</div>
           <p>${escapeHtml(item.note || '')}</p>
           <div class="meta">${escapeHtml(item.platform || 'Prospect')} · ${escapeHtml(item.field || '')}</div>
           <div class="template">${escapeHtml(item.template || prospectTemplate(item))}</div>
@@ -470,6 +587,7 @@ https://www.linkedin.com/posts/..."></textarea>
             <button class="primary" data-open-copy="${index}">Open + Copy</button>
             <button class="secondary" data-copy="${index}">Copy Subject + DM</button>
             <button class="green" data-sent="${index}">Mark DM Sent</button>
+            <button class="green" data-signup="${index}">Mark Signup</button>
             <button class="danger" data-remove="${index}">Remove</button>
           </div>
         `;
@@ -492,6 +610,16 @@ https://www.linkedin.com/posts/..."></textarea>
         btn.addEventListener('click', () => {
           const next = loadProspects();
           next[Number(btn.dataset.sent)].status = 'DM_SENT';
+          next[Number(btn.dataset.sent)].dmSentAt = new Date().toISOString();
+          saveProspects(next);
+          renderProspects();
+        });
+      });
+      box.querySelectorAll('[data-signup]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const next = loadProspects();
+          next[Number(btn.dataset.signup)].status = 'SIGNED_UP';
+          next[Number(btn.dataset.signup)].signedUpAt = new Date().toISOString();
           saveProspects(next);
           renderProspects();
         });
@@ -508,7 +636,7 @@ https://www.linkedin.com/posts/..."></textarea>
 
     function renderDmConsole(items) {
       const box = $('dmConsole');
-      const nextIndex = items.findIndex(item => (item.status || 'NEW') !== 'DM_SENT');
+      const nextIndex = items.findIndex(item => !['DM_SENT', 'SIGNED_UP'].includes(item.status || 'NEW'));
       if (nextIndex < 0) {
         box.innerHTML = '<div class="empty">No unsent messages. Nice.</div>';
         return;
@@ -532,9 +660,26 @@ https://www.linkedin.com/posts/..."></textarea>
       $('nextSent').addEventListener('click', () => {
         const next = loadProspects();
         next[nextIndex].status = 'DM_SENT';
+        next[nextIndex].dmSentAt = new Date().toISOString();
         saveProspects(next);
         renderProspects();
       });
+    }
+
+    function renderStats() {
+      const partner = getPartner();
+      const items = loadProspects();
+      const sent = items.filter(item => ['DM_SENT', 'SIGNED_UP'].includes(item.status || 'NEW')).length;
+      const signups = items.filter(item => (item.status || '') === 'SIGNED_UP').length;
+      $('statProspects').textContent = String(items.length);
+      $('statSent').textContent = String(sent);
+      $('statSignups').textContent = String(signups);
+      $('statFees').textContent = `$${(signups * Number(partner.finderFee || 0)).toLocaleString()}`;
+      const remaining = Math.max(Number(partner.dailyGoal || 0) - sent, 0);
+      $('missionText').textContent = remaining
+        ? `Daily mission: ${remaining} more thoughtful DMs to hit today's goal.`
+        : 'Daily mission complete. Export the CSV when you want payout/proof tracking.';
+      $('referralLink').value = referralLink(partner);
     }
 
     function escapeHtml(value) {
@@ -581,9 +726,13 @@ https://www.linkedin.com/posts/..."></textarea>
     }
 
     function buildProspectItem(source) {
+      const partner = getPartner();
       const item = {
         name: source.name || '',
         profile: source.profile || '',
+        partnerName: partner.partnerName || '',
+        referralCode: partner.referralCode || '',
+        referralLink: referralLink(partner),
         field: source.field || '',
         note: source.note || '',
         subject: getSubject(),
@@ -631,8 +780,8 @@ https://www.linkedin.com/posts/..."></textarea>
     }
 
     function exportCsv() {
-      const rows = [['Name', 'Profile URL', 'Field', 'Note', 'Subject', 'Template', 'Status', 'Saved At'], ...loadProspects().map(item => [
-        item.name, item.profile, item.field, item.note, item.subject || getSubject(), item.template || prospectTemplate(item), item.status || 'NEW', item.savedAt
+      const rows = [['Partner', 'Referral Code', 'Referral Link', 'Name', 'Profile URL', 'Platform', 'Field', 'Note', 'Subject', 'Template', 'Status', 'DM Sent At', 'Signed Up At', 'Saved At'], ...loadProspects().map(item => [
+        item.partnerName, item.referralCode, item.referralLink, item.name, item.profile, item.platform, item.field, item.note, item.subject || getSubject(), item.template || prospectTemplate(item), item.status || 'NEW', item.dmSentAt, item.signedUpAt, item.savedAt
       ])];
       const csv = rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -651,11 +800,19 @@ https://www.linkedin.com/posts/..."></textarea>
     $('buildBtn').addEventListener('click', renderSearches);
     $('copyDmBtn').addEventListener('click', () => copyText(getTemplate()));
     $('copyTemplateBtn').addEventListener('click', () => copyText(getTemplate()));
+    $('savePartnerBtn').addEventListener('click', () => {
+      const partner = getPartner();
+      savePartner(partner);
+      $('referralCode').value = partner.referralCode;
+      $('referralLink').value = referralLink(partner);
+      renderStats();
+    });
+    $('copyReferralBtn').addEventListener('click', () => copyText(referralLink(getPartner())));
     $('parseBtn').addEventListener('click', parseAndSaveProspect);
     $('saveBtn').addEventListener('click', saveProspect);
     $('copyAllBtn').addEventListener('click', () => {
       const messages = loadProspects()
-        .filter(item => (item.status || 'NEW') !== 'DM_SENT')
+        .filter(item => !['DM_SENT', 'SIGNED_UP'].includes(item.status || 'NEW'))
         .map(item => item.template || prospectTemplate(item));
       copyText(messages.join('\n\n---\n\n'));
     });
@@ -668,8 +825,10 @@ https://www.linkedin.com/posts/..."></textarea>
     });
 
     $('template').textContent = getTemplate();
+    hydratePartnerForm();
     renderSearches();
     renderProspects();
+    renderStats();
   </script>
 </body>
 </html>

@@ -2,6 +2,13 @@
 
 Static, free prospect-finder page for manual LinkedIn, Reddit, and X outreach.
 
+It includes a local growth-partner console:
+
+- referral code and referral link generator
+- DM queue with copy/open workflow
+- local scoreboard for prospects, DMs sent, signups, and estimated finder fees
+- CSV export for proof/payout review
+
 ## Deploy To Vercel
 
 1. Push this repo to GitHub.
@@ -29,4 +36,5 @@ Install Command: None
 - It does not scrape LinkedIn, Reddit, or X.
 - It does not send DMs or posts.
 - Saved prospects live in each user's browser local storage.
+- Finder fees are estimated locally. Confirm payout terms separately before recruiting partners.
 - For shared team tracking, use the full Streamlit dashboard or add a shared database later.
