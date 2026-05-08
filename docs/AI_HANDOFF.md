@@ -1,5 +1,8 @@
 # AI Handoff
 
+## Future task start
+Before making changes, read `AGENTS.md` first, then `docs/AI_HANDOFF.md`, then only the files directly relevant to the task. Do not scan the whole repo unless those docs are missing or the task genuinely requires broader investigation.
+
 ## Current project summary
 1stStep Growth Finder is a static founder partner/referral page. It generates partner links to `app.1ststep.ai`, helps build manual search links, saves prospects in browser localStorage, creates a DM review queue, and exports CSVs.
 
